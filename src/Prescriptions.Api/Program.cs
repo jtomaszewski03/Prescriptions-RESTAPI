@@ -1,10 +1,13 @@
 using Microsoft.EntityFrameworkCore;
 using Prescriptions.Api.Data;
+using Prescriptions.Api.Exceptions;
 using Prescriptions.Api.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddControllers();
+builder.Services.AddProblemDetails();
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Database context configuration.
 builder.Services.AddDbContext<DatabaseContext>(options => 
@@ -18,6 +21,8 @@ builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 if (app.Environment.IsDevelopment())
 {

@@ -10,6 +10,7 @@ namespace Prescriptions.Api.Controllers
     public class PrescriptionsController : ControllerBase
     {
         private readonly IDbService _dbService;
+
         public PrescriptionsController(IDbService dbService)
         {
             _dbService = dbService;
@@ -18,19 +19,8 @@ namespace Prescriptions.Api.Controllers
         [HttpPost]
         public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto request)
         {
-            try
-            {
-                await _dbService.CreatePrescriptionAsync(request);
-                return Created();
-            }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            await _dbService.CreatePrescriptionAsync(request);
+            return Created();
         }
     }
 }
