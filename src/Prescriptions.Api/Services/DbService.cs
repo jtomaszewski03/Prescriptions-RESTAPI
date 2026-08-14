@@ -24,6 +24,12 @@ public class DbService : IDbService
                 throw new InvalidDataException("The due date cannot be earlier than Date.");
             }
 
+            var doctor = await _context.Doctors.AnyAsync(d => d.IdDoctor == prescriptionDto.IdDoctor);
+            if (!doctor)
+            {
+                throw new NotFoundException("The doctor was not found.");
+            }
+
             var patient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == prescriptionDto.Patient.IdPatient);
             if (patient == null)
             {
