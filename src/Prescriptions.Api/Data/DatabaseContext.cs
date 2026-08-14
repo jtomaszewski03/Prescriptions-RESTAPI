@@ -10,6 +10,8 @@ public class DatabaseContext : DbContext
     public DbSet<PrescriptionMedicament> PrescriptionsMedicaments { get; set; }
     public DbSet<Medicament> Medicaments { get; set; }
     public DbSet<Patient> Patients { get; set; }
+
+    public DbSet<User> Users { get; set; } = null!;
     
     protected DatabaseContext()
     {
@@ -55,6 +57,18 @@ public class DatabaseContext : DbContext
             new PrescriptionMedicament { IdPrescription = 3, IdMedicament = 4, Dose = 1, Details = "Use before sleep" },
             new PrescriptionMedicament { IdPrescription = 3, IdMedicament = 7, Dose = 2, Details = "Use when needed" }
         });
+        modelBuilder.Entity<User>()
+            .HasIndex(u => u.Email)
+            .IsUnique();
+        modelBuilder.Entity<User>()
+            .Property(u => u.Role)
+            .HasConversion<string>()
+            .HasMaxLength(20);
+        modelBuilder.Entity<User>()
+            .HasOne(u => u.Doctor)
+            .WithOne(d => d.User)
+            .HasForeignKey<User>(u => u.IdDoctor)
+            .OnDelete(DeleteBehavior.SetNull);
         base.OnModelCreating(modelBuilder);
     }
 }
