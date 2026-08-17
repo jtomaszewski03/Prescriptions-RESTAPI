@@ -51,11 +51,15 @@ public class DbService : IDbService
             }
 
             var medicamentIds = prescriptionDto.Medicaments.Select(m => m.IdMedicament).ToList();
+            if (medicamentIds.Count != medicamentIds.Distinct().Count())
+            {
+                throw new InvalidDataException("The same medicaments cannot be added more than once.");
+            }
             var existingIds = await _context.Medicaments.Where(m => medicamentIds.Contains(m.IdMedicament))
                 .Select(m => m.IdMedicament)
                 .ToListAsync(ct);
             var missingIds = medicamentIds.Except(existingIds).ToList();
-            if (existingIds.Count != medicamentIds.Count)
+            if (missingIds.Count > 0)
             {
                 throw new NotFoundException($"Medicaments not found: {string.Join(", ", missingIds)}.");
             }
