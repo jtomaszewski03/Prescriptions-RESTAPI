@@ -1,9 +1,12 @@
 ﻿using System.Data.Common;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.AspNetCore.TestHost;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Prescriptions.Api.Data;
@@ -14,6 +17,17 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
+        builder.ConfigureAppConfiguration((_, configuration) =>
+        {
+            configuration.AddInMemoryCollection(new Dictionary<string, string?>
+            {
+                ["Jwt:Key"] = "integration-tests-only-signing-key-1234567890",
+                ["Jwt:Issuer"] = "Prescriptions.Api.Tests",
+                ["Jwt:Audience"] = "Prescriptions.Api.Tests",
+                ["Jwt:ExpirationMinutes"] = "15"
+            });
+        });
+
         builder.ConfigureServices(services =>
         {
             services.RemoveAll<IDbContextOptionsConfiguration<DatabaseContext>>();
@@ -33,6 +47,16 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
                 options.UseSqlite(connection);
             });
         });
+        builder.ConfigureTestServices(services =>
+        {
+            services.AddAuthentication(options =>
+                {
+                    options.DefaultAuthenticateScheme = TestAuthHandler.SchemeName;
+                    options.DefaultChallengeScheme = TestAuthHandler.SchemeName;
+                    options.DefaultForbidScheme = TestAuthHandler.SchemeName;
+                })
+                .AddScheme<AuthenticationSchemeOptions, TestAuthHandler>(TestAuthHandler.SchemeName, null);
+        });
         builder.UseEnvironment("Test");
     }
 
@@ -43,5 +67,4 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
         await context.Database.EnsureDeletedAsync(cancellationToken);
         await context.Database.EnsureCreatedAsync(cancellationToken);
     }
-    
 }
