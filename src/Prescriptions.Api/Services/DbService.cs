@@ -51,13 +51,13 @@ public class DbService : IDbService
             }
 
             var medicamentIds = prescriptionDto.Medicaments.Select(m => m.IdMedicament).ToList();
-            foreach (var medicamentId in medicamentIds)
+            var existingIds = await _context.Medicaments.Where(m => medicamentIds.Contains(m.IdMedicament))
+                .Select(m => m.IdMedicament)
+                .ToListAsync(ct);
+            var missingIds = medicamentIds.Except(existingIds).ToList();
+            if (existingIds.Count != medicamentIds.Count)
             {
-                var medicament = await _context.Medicaments.FirstOrDefaultAsync(m => m.IdMedicament == medicamentId, ct);
-                if (medicament == null)
-                {
-                    throw new NotFoundException("The medicament cannot be found.");
-                }
+                throw new NotFoundException($"Medicaments not found: {string.Join(", ", missingIds)}.");
             }
 
             var prescription = new Prescription
