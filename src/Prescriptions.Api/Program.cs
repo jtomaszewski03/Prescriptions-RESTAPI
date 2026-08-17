@@ -19,7 +19,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 // Database context configuration.
 builder.Services.AddDbContext<DatabaseContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"))
+    options.UseSqlServer(builder.Configuration.GetConnectionString("Default"),
+        sqlOptions => sqlOptions.EnableRetryOnFailure())
 );
 
 // Dependency injection setup.
@@ -77,6 +78,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddAuthorization();
 
 var app = builder.Build();
+
+if (app.Configuration.GetValue<bool>("Database:ApplyMigrations"))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var context = scope.ServiceProvider.GetRequiredService<DatabaseContext>();
+    await context.Database.MigrateAsync();
+}
 
 app.UseExceptionHandler();
 
