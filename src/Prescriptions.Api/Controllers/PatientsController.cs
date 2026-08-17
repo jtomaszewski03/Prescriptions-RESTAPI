@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Prescriptions.Api.Services;
 using Microsoft.AspNetCore.Mvc;
 
@@ -14,6 +15,7 @@ public class PatientsController : ControllerBase
         _dbService = dbService;
     }
 
+    [Authorize(Roles = "Doctor,Admin")]
     [HttpGet("{id}")]
     public async Task<IActionResult> GetPatient(int id)
     {
@@ -21,6 +23,7 @@ public class PatientsController : ControllerBase
         return Ok(patientDetails);
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpDelete("{id}")]
     public async Task<IActionResult> DeletePatient(int id)
     {

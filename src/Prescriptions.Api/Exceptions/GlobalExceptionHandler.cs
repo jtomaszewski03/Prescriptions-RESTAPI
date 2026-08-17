@@ -21,6 +21,8 @@ public class GlobalExceptionHandler : IExceptionHandler
         {
             NotFoundException => (HttpStatusCode.NotFound, "Not found", exception.Message),
             InvalidDataException => (HttpStatusCode.BadRequest, "Invalid request", exception.Message),
+            ConflictException => (HttpStatusCode.Conflict, "Conflict", exception.Message),
+            UnauthorizedException => (HttpStatusCode.Unauthorized, "Unauthorized", exception.Message),
             _ => (HttpStatusCode.InternalServerError, "Internal server error", "Unexpected server error.")
         };
         if (statusCode == HttpStatusCode.InternalServerError)

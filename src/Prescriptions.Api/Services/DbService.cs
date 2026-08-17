@@ -9,12 +9,13 @@ namespace Prescriptions.Api.Services;
 public class DbService : IDbService
 {
     private readonly DatabaseContext _context;
+
     public DbService(DatabaseContext context)
     {
         _context = context;
     }
 
-    public async Task<Prescription> CreatePrescriptionAsync(CreatePrescriptionDto prescriptionDto)
+    public async Task<Prescription> CreatePrescriptionAsync(CreatePrescriptionDto prescriptionDto, int idDoctor)
     {
         await using var transaction = await _context.Database.BeginTransactionAsync();
         try
@@ -24,13 +25,14 @@ public class DbService : IDbService
                 throw new InvalidDataException("The due date cannot be earlier than Date.");
             }
 
-            var doctor = await _context.Doctors.AnyAsync(d => d.IdDoctor == prescriptionDto.IdDoctor);
+            var doctor = await _context.Doctors.AnyAsync(d => d.IdDoctor == idDoctor);
             if (!doctor)
             {
                 throw new NotFoundException("The doctor was not found.");
             }
 
-            var patient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == prescriptionDto.Patient.IdPatient);
+            var patient =
+                await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == prescriptionDto.Patient.IdPatient);
             if (patient == null)
             {
                 patient = new Patient
@@ -63,7 +65,7 @@ public class DbService : IDbService
                 Date = prescriptionDto.Date,
                 DueDate = prescriptionDto.DueDate,
                 PatientId = patient.IdPatient,
-                IdDoctor = prescriptionDto.IdDoctor,
+                IdDoctor = idDoctor,
                 PrescriptionsMedicaments = prescriptionDto.Medicaments.Select(e => new PrescriptionMedicament
                 {
                     IdMedicament = e.IdMedicament,
@@ -83,7 +85,7 @@ public class DbService : IDbService
             throw;
         }
     }
-    
+
     public async Task<GetPatientDetailsDto> GetPatientDetailsAsync(int idPatient)
     {
         var patient = await _context.Patients
