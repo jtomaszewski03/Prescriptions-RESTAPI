@@ -39,10 +39,9 @@ public class DbServiceTests
             ],
             Date = new DateTime(2026, 8, 10),
             DueDate = new DateTime(2026, 8, 9),
-            IdDoctor = 1
         };
         
-        var exception = await Assert.ThrowsAsync<InvalidDataException>(() => service.CreatePrescriptionAsync(prescriptionDto));
+        var exception = await Assert.ThrowsAsync<InvalidDataException>(() => service.CreatePrescriptionAsync(prescriptionDto, 1));
         Assert.Equal("The due date cannot be earlier than Date.",  exception.Message);
     }
     
@@ -76,10 +75,9 @@ public class DbServiceTests
             ],
             Date = new DateTime(2026, 8, 10),
             DueDate = new DateTime(2026, 8, 11),
-            IdDoctor = 999
         };
         
-        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.CreatePrescriptionAsync(prescriptionDto));
+        var exception = await Assert.ThrowsAsync<NotFoundException>(() => service.CreatePrescriptionAsync(prescriptionDto, 999));
         Assert.Equal("The doctor was not found.",  exception.Message);
     }
 
@@ -113,9 +111,8 @@ public class DbServiceTests
             ],
             Date = new DateTime(2026, 8, 10),
             DueDate = new DateTime(2026, 8, 11),
-            IdDoctor = 1
         };
-        var result = await service.CreatePrescriptionAsync(prescriptionDto);
+        var result = await service.CreatePrescriptionAsync(prescriptionDto, 1);
         Assert.Equal(1, result.IdDoctor);
         Assert.Equal(1, result.PatientId);
         context.ChangeTracker.Clear();
@@ -158,9 +155,8 @@ public class DbServiceTests
             ],
             Date = new DateTime(2026, 8, 10),
             DueDate = new DateTime(2026, 8, 11),
-            IdDoctor = 1
         };
-        var result = await service.CreatePrescriptionAsync(prescriptionDto);
+        var result = await service.CreatePrescriptionAsync(prescriptionDto, 1);
         Assert.Equal(1, result.IdDoctor);
         context.ChangeTracker.Clear();
         var savedPatient = await context.Patients.Where(p => p.FirstName == prescriptionDto.Patient.FirstName
