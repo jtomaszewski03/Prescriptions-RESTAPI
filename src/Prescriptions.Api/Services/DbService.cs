@@ -15,9 +15,9 @@ public class DbService : IDbService
         _context = context;
     }
 
-    public async Task<Prescription> CreatePrescriptionAsync(CreatePrescriptionDto prescriptionDto, int idDoctor)
+    public async Task<Prescription> CreatePrescriptionAsync(CreatePrescriptionDto prescriptionDto, int idDoctor, CancellationToken ct)
     {
-        await using var transaction = await _context.Database.BeginTransactionAsync();
+        await using var transaction = await _context.Database.BeginTransactionAsync(ct);
         try
         {
             if (prescriptionDto.DueDate < prescriptionDto.Date)
@@ -25,14 +25,14 @@ public class DbService : IDbService
                 throw new InvalidDataException("The due date cannot be earlier than Date.");
             }
 
-            var doctor = await _context.Doctors.AnyAsync(d => d.IdDoctor == idDoctor);
+            var doctor = await _context.Doctors.AnyAsync(d => d.IdDoctor == idDoctor, ct);
             if (!doctor)
             {
                 throw new NotFoundException("The doctor was not found.");
             }
 
             var patient =
-                await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == prescriptionDto.Patient.IdPatient);
+                await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == prescriptionDto.Patient.IdPatient, ct);
             if (patient == null)
             {
                 patient = new Patient
@@ -41,8 +41,8 @@ public class DbService : IDbService
                     LastName = prescriptionDto.Patient.LastName,
                     Birthdate = prescriptionDto.Patient.Birthdate,
                 };
-                await _context.Patients.AddAsync(patient);
-                await _context.SaveChangesAsync();
+                await _context.Patients.AddAsync(patient, ct);
+                await _context.SaveChangesAsync(ct);
             }
 
             if (prescriptionDto.Medicaments.Count > 10)
@@ -53,7 +53,7 @@ public class DbService : IDbService
             var medicamentIds = prescriptionDto.Medicaments.Select(m => m.IdMedicament).ToList();
             foreach (var medicamentId in medicamentIds)
             {
-                var medicament = await _context.Medicaments.FirstOrDefaultAsync(m => m.IdMedicament == medicamentId);
+                var medicament = await _context.Medicaments.FirstOrDefaultAsync(m => m.IdMedicament == medicamentId, ct);
                 if (medicament == null)
                 {
                     throw new NotFoundException("The medicament cannot be found.");
@@ -74,19 +74,19 @@ public class DbService : IDbService
                 }).ToList(),
             };
 
-            await _context.Prescriptions.AddAsync(prescription);
-            await _context.SaveChangesAsync();
-            await transaction.CommitAsync();
+            await _context.Prescriptions.AddAsync(prescription, ct);
+            await _context.SaveChangesAsync(ct);
+            await transaction.CommitAsync(ct);
             return prescription;
         }
         catch (Exception)
         {
-            await transaction.RollbackAsync();
+            await transaction.RollbackAsync(CancellationToken.None);
             throw;
         }
     }
 
-    public async Task<GetPatientDetailsDto> GetPatientDetailsAsync(int idPatient)
+    public async Task<GetPatientDetailsDto> GetPatientDetailsAsync(int idPatient, CancellationToken ct)
     {
         var patient = await _context.Patients
             .Include(p => p.Prescriptions)
@@ -94,7 +94,7 @@ public class DbService : IDbService
             .Include(p => p.Prescriptions)
             .ThenInclude(pr => pr.PrescriptionsMedicaments)
             .ThenInclude(pm => pm.Medicament)
-            .FirstOrDefaultAsync(p => p.IdPatient == idPatient);
+            .FirstOrDefaultAsync(p => p.IdPatient == idPatient, ct);
 
         if (patient == null)
         {
@@ -134,9 +134,9 @@ public class DbService : IDbService
         };
     }
 
-    public async Task DeletePatientAsync(int idPatient)
+    public async Task DeletePatientAsync(int idPatient, CancellationToken ct)
     {
-        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == idPatient);
+        var patient = await _context.Patients.FirstOrDefaultAsync(p => p.IdPatient == idPatient, ct);
 
         if (patient == null)
         {
@@ -144,6 +144,6 @@ public class DbService : IDbService
         }
 
         _context.Patients.Remove(patient);
-        await _context.SaveChangesAsync();
+        await _context.SaveChangesAsync(ct);
     }
 }

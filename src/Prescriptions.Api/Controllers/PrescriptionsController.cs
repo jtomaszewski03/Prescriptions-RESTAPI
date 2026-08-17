@@ -21,14 +21,14 @@ namespace Prescriptions.Api.Controllers
 
         [Authorize(Roles = "Doctor")]
         [HttpPost]
-        public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto request)
+        public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto request, CancellationToken ct)
         {
             if (!int.TryParse(User.FindFirstValue("IdDoctor"), out var idDoctor))
             {
                 return Forbid();
             }
             
-            await _dbService.CreatePrescriptionAsync(request, idDoctor);
+            await _dbService.CreatePrescriptionAsync(request, idDoctor, ct);
             return Created();
         }
     }
