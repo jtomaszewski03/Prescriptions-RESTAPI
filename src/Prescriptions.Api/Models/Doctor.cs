@@ -17,4 +17,6 @@ public class Doctor
     public string Email { get; set; }
     
     public virtual ICollection<Prescription> Prescriptions { get; set; }
+    
+    public virtual User? User { get; set; }
 }

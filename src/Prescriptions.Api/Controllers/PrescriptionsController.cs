@@ -1,5 +1,8 @@
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
 using Prescriptions.Api.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.VisualBasic.CompilerServices;
 using Prescriptions.Api.DTOs;
 using Prescriptions.Api.Exceptions;
 
@@ -10,27 +13,23 @@ namespace Prescriptions.Api.Controllers
     public class PrescriptionsController : ControllerBase
     {
         private readonly IDbService _dbService;
+
         public PrescriptionsController(IDbService dbService)
         {
             _dbService = dbService;
         }
 
+        [Authorize(Roles = "Doctor")]
         [HttpPost]
-        public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto request)
+        public async Task<IActionResult> CreatePrescription([FromBody] CreatePrescriptionDto request, CancellationToken ct)
         {
-            try
+            if (!int.TryParse(User.FindFirstValue("IdDoctor"), out var idDoctor))
             {
-                await _dbService.CreatePrescriptionAsync(request);
-                return Created();
+                return Forbid();
             }
-            catch (NotFoundException e)
-            {
-                return NotFound(e.Message);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            
+            await _dbService.CreatePrescriptionAsync(request, idDoctor, ct);
+            return Created();
         }
     }
 }
